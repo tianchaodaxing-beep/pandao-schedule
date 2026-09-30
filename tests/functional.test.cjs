@@ -1,0 +1,14 @@
+const test=require('node:test');const assert=require('node:assert/strict');const P=require('../planning.js');
+const rows=[{id:'A',title:'确认',duration:2,dependencies:''},{id:'B',title:'制作',duration:3,dependencies:'A'},{id:'C',title:'准备',duration:4,dependencies:'A'},{id:'D',title:'交付',duration:2,dependencies:'B,C'}];
+test("并行任务完成日期与关键任务核对",()=>{const r=P.schedule(rows,'2026-09-28');assert.equal(r.duration,8);assert.equal(r.finish,'2026-10-07');assert.deepEqual(r.details.filter(x=>x.critical).map(x=>x.id),['A','C','D']);assert.equal(r.details[1].slack,1);});
+test("周末起点移至周一",()=>{assert.equal(P.schedule([{id:'A',title:'一',duration:1}],'2026-10-03').start,'2026-10-05');});
+test("周末计入工期",()=>{assert.equal(P.schedule([{id:'A',title:'一',duration:2}],'2026-10-03',false).finish,'2026-10-04');});
+test("指定休息日跳过",()=>{const r=P.schedule([{id:'A',title:'一',duration:2}],'2026-10-05',true,['2026-10-06']);assert.equal(r.finish,'2026-10-07');});
+test("输入顺序不限制前置任务",()=>{const r=P.schedule([...rows].reverse(),'2026-09-28');assert.equal(r.finish,'2026-10-07');assert.equal(r.details[0].id,'D');});
+test("不存在的前置任务被拒绝",()=>{assert.throws(()=>P.schedule([{...rows[0],dependencies:'X'}],'2026-09-28'),/不存在/);});
+test("循环依赖被拒绝",()=>{assert.throws(()=>P.schedule([{...rows[0],dependencies:'B'},rows[1]],'2026-09-28'),/循环/);});
+test("自身依赖被拒绝",()=>{assert.throws(()=>P.schedule([{...rows[0],dependencies:'A'}],'2026-09-28'),/循环/);});
+test("重复编号被拒绝",()=>{assert.throws(()=>P.schedule([rows[0],rows[0]],'2026-09-28'),/重复/);});
+test("小数工期被拒绝",()=>{assert.throws(()=>P.schedule([{...rows[0],duration:1.5}],'2026-09-28'),/整数/);});
+test("排程超出日期上限被拒绝",()=>{assert.throws(()=>P.schedule([{...rows[0],duration:365}],'2100-12-31'),/超出2100/);});
+test("重复依赖避免重复约束",()=>{assert.throws(()=>P.schedule([rows[0],{...rows[1],dependencies:'A,A'}],'2026-09-28'),/重复/);});

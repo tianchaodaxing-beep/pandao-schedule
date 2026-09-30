@@ -1,0 +1,9 @@
+(function(){
+  "use strict";
+  const U=Pandao,E=ToolEditor,P=Planning;
+  E.workbench({key:"schedule",title:"项目工期排程工具",icon:"▥",category:"项目交付",description:"录入工作天数和前置任务，生成日期排程与关键任务清单。",repo:"https://github.com/tianchaodaxing-beep/pandao-schedule",inputTitle:"项目任务",outputTitle:"项目排程",columns:[{label:"任务编号",key:"id"},{label:"任务名称",key:"title"},{label:"工作天数",key:"duration",type:"number",default:1},{label:"前置任务",key:"dependencies",default:""}],examples:[{id:"A",title:"需求确认",duration:2,dependencies:""},{id:"B",title:"方案制作",duration:3,dependencies:"A"},{id:"C",title:"材料准备",duration:4,dependencies:"A"},{id:"D",title:"交付检查",duration:2,dependencies:"B,C"}],parameters:[["项目开始日期","start","2026-09-28","date"],["周末安排","weekends","skip","text",[["skip","跳过周六和周日"],["include","周末计入工作天"]]],["额外休息日期（每行一个）","holidays","","textarea"]],calculateLabel:"生成排程",exportLabel:"导出项目排程",compute:(rows,p)=>P.schedule(rows,p.start,p.weekends==="skip",p.holidays.split(/[\s,，;；]+/).filter(Boolean)),export:v=>v.details.map(r=>({任务编号:r.id,任务名称:r.title,工作天数:r.duration,前置任务:r.dependencies,开始日期:r.start,完成日期:r.finish,可延后工作天数:r.slack,关键任务:r.critical?"是":"否"})),view:v=>[
+    U.metrics([["预计完成",v.finish,"日期"],["项目工期",v.duration,"工作天"],["关键任务",v.details.filter(r=>r.critical).length,"项"]]),
+    U.h("div",{class:"gantt"},v.details.map(r=>U.h("div",{class:"gantt-row"},[U.h("span",{class:"gantt-label",text:r.id+" · "+r.title}),U.h("div",{class:"gantt-track",role:"img","aria-label":r.title+"，"+r.start+"至"+r.finish+(r.critical?"，关键任务":"")},U.h("div",{class:"gantt-bar"+(r.critical?" critical":""),style:"left:"+(r.offset/v.duration*100)+"%;width:"+(r.duration/v.duration*100)+"%"}))]))),
+    E.table([{label:"任务编号",key:"id"},{label:"任务名称",key:"title"},{label:"开始日期",key:"start"},{label:"完成日期",key:"finish"},{label:"可延后工作天数",key:"slack",number:true},{label:"关键任务",value:r=>r.critical?"是":"否"}],v.details)
+  ]});
+})();

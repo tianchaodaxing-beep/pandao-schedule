@@ -1,0 +1,10 @@
+{
+  "name": "pandao-schedule",
+  "version": "1.0.2",
+  "private": true,
+  "description": "录入工作天数和前置任务，生成日期排程与关键任务清单。",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs"
+  }
+}
